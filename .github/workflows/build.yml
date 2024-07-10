@@ -27,8 +27,14 @@ jobs:
     - name: Build executable from .spec file
       run: pyinstaller Sistema_Lector_de_Facturas_Windows.spec
 
-    - name: Upload Artifact
+    - name: Upload .spec file
       uses: actions/upload-artifact@v2
       with:
-        name: executable
-        path: dist/
+        name: spec-file
+        path: Sistema_Lector_de_Facturas_Windows.spec
+
+    - name: Upload dist folder
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist-folder
+        path: dist
