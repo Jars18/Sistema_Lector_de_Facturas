@@ -19,7 +19,7 @@ jobs:
       run: pip install pyinstaller
 
     - name: Build Executable
-      run: pyinstaller --onefile tu_script.py
+      run: pyinstaller --onefile Sistema_Lector_de_Facturas_Windows.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
