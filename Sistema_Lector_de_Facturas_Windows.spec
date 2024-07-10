@@ -1,27 +1,39 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+block_cipher = None
 
 a = Analysis(
-    ['https://github.com/Jars18/Sistema_Lector_de_Facturas/blob/54581a6acd8d780e78dc10a1b56ef7a5313ba15f/Sistema_Lector_de_Facturas_Windows.py'],
+    ['Sistema_Lector_de_Facturas.py'],
     pathex=[],
     binaries=[],
-    datas=[('/Users/jurgenalejandrorocasalvosanchez/Documents/Programa_PDG/Lector_de_Facturas/lib/python3.11/site-packages/ultralytics', 'ultralytics/'), ('https://github.com/Jars18/Sistema_Lector_de_Facturas/blob/2ca8c9c3fbc34fa4b4b443627ea97acb31b279d8/background.png', '.'), ('https://github.com/Jars18/Sistema_Lector_de_Facturas/blob/4d07e517878959f4cc6bb41c08d22cab2075bf5e/best_ultimo.pt', '.')],
-    hiddenimports=[],
+    datas=[
+        ('background.png', '.'),  # Incluye el archivo de imagen
+        ('best_ultimo.pt', '.')   # Incluye el archivo de modelo
+    ],
+    hiddenimports=[
+        'fitz',
+        'ultralytics',
+        'transformers',
+        'PIL',
+        'easyocr',
+        'cv2',
+        'numpy',
+        'openpyxl',
+        'torch'
+    ],
     hookspath=[],
-    hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    noarchive=False,
-    optimize=0,
+    noarchive=False
 )
-pyz = PYZ(a.pure)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='Sistema_Lector_de_Facturas_Windows',
     debug=False,
     bootloader_ignore_signals=False,
@@ -29,10 +41,16 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    console=True
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Sistema_Lector_de_Facturas_Windows'
 )
