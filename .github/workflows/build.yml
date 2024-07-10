@@ -16,7 +16,9 @@ jobs:
         python-version: '3.x'
 
     - name: Install dependencies
-      run: pip install pyinstaller fitz ultralytics transformers Pillow easyocr opencv-python-headless numpy openpyxl torch
+      run: |
+        pip install pyinstaller fitz ultralytics transformers Pillow easyocr opencv-python-headless numpy openpyxl torch
+        pip uninstall -y pathlib  # Desinstala pathlib para evitar conflictos
 
     - name: Build executable from .spec file
       run: pyinstaller Sistema_Lector_de_Facturas_Windows.spec
