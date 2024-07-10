@@ -19,7 +19,7 @@ jobs:
       run: pip install pyinstaller
 
     - name: Generate .spec file
-      run: pyinstaller --onefile --name=tu_script --specpath=. Sistema_Lector_de_Facturas_Windows.py
+      run: pyinstaller --onefile --name=Sistema_Lector_de_Facturas_Windows --specpath=. Sistema_Lector_de_Facturas.py
 
     - name: Build executable from .spec file
       run: pyinstaller Sistema_Lector_de_Facturas_Windows.spec
