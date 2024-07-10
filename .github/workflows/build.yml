@@ -18,23 +18,11 @@ jobs:
     - name: Install dependencies
       run: pip install pyinstaller
 
-    - name: Generate .spec file
-      run: pyinstaller --onefile --name=Sistema_Lector_de_Facturas_Windows Sistema_Lector_de_Facturas.py
-
-    - name: List files in current directory
-      run: dir
-
     - name: Build executable from .spec file
       run: pyinstaller Sistema_Lector_de_Facturas_Windows.spec
 
-    - name: Upload .spec file
+    - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: spec-file
-        path: Sistema_Lector_de_Facturas_Windows.spec
-
-    - name: Upload dist folder
-      uses: actions/upload-artifact@v2
-      with:
-        name: dist-folder
-        path: dist
+        name: executable
+        path: dist/
