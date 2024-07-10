@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['https://github.com/Jars18/Sistema_Lector_de_Facturas/blob/2ca8c9c3fbc34fa4b4b443627ea97acb31b279d8/Sistema_Lector_de_Facturas_Windows.py'],
+    ['https://github.com/Jars18/Sistema_Lector_de_Facturas/blob/54581a6acd8d780e78dc10a1b56ef7a5313ba15f/Sistema_Lector_de_Facturas_Windows.py'],
     pathex=[],
     binaries=[],
     datas=[('/Users/jurgenalejandrorocasalvosanchez/Documents/Programa_PDG/Lector_de_Facturas/lib/python3.11/site-packages/ultralytics', 'ultralytics/'), ('https://github.com/Jars18/Sistema_Lector_de_Facturas/blob/2ca8c9c3fbc34fa4b4b443627ea97acb31b279d8/background.png', '.'), ('https://github.com/Jars18/Sistema_Lector_de_Facturas/blob/2ca8c9c3fbc34fa4b4b443627ea97acb31b279d8/best_ultimo.pt', '.')],
