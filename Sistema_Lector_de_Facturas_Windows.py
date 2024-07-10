@@ -1,7 +1,7 @@
 
 ##ESTE PROGRAMA SOLO ES UN EJECUTABLE DE PYTHON
 import os
-from pdf2image import convert_from_path
+import fitz  # PyMuPDF
 from ultralytics import YOLO
 import glob
 import re
@@ -338,11 +338,20 @@ def sistema_de_lectura():
     # Obtener la lista de archivos con extensión .pdf
     pdf_files = glob.glob("PDFs_file/*.pdf")
 
-    for pdf_file in pdf_files:                                                  # Procesamos cada archivo PDF
-        images = convert_from_path(pdf_file)                                    # y convertimos el PDF a imágenes
-        for i, img in enumerate(images, start=1):                               # comenzando desde la imagen 1
-            nombre_archivo = os.path.join(ruta_destino, f"factura{i}.jpg")      # hasta la ultima imagen 
-            img.save(nombre_archivo)                                            # guardandolas en "img_of_pdf"
+    for pdf_file in pdf_files:
+        pdf_document = fitz.open(pdf_file)
+        
+        # Parámetros de escala y antialiasing
+        zoom_x = 3.0  # Factor de escala horizontal
+        zoom_y = 3.0  # Factor de escala vertical
+        mat = fitz.Matrix(zoom_x, zoom_y)
+    
+        for i, page in enumerate(pdf_document, start=1):
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+            nombre_archivo = os.path.join(ruta_destino, f"factura{i}.jpg")
+            pix.save(nombre_archivo)  # guardando las imágenes en "img_of_pdf"
+        
+        pdf_document.close()  # Cerramos el archivo PDF      #Los datos extraidos se guardan en este vector
         
         # Esta sección reconoce los campos etiquetados y los guarda en un vector
         
