@@ -22,7 +22,7 @@ jobs:
       run: pyinstaller --onefile --name=tu_script --specpath=. Sistema_Lector_de_Facturas_Windows.py
 
     - name: Build executable from .spec file
-      run: pyinstaller tu_script.spec
+      run: pyinstaller Sistema_Lector_de_Facturas_Windows.spec
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
