@@ -15,11 +15,14 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Install PyInstaller
+    - name: Install dependencies
       run: pip install pyinstaller
 
-    - name: Build Executable
-      run: pyinstaller --onefile Sistema_Lector_de_Facturas_Windows.py
+    - name: Generate .spec file
+      run: pyinstaller --onefile --name=tu_script --specpath=. Sistema_Lector_de_Facturas_Windows.py
+
+    - name: Build executable from .spec file
+      run: pyinstaller tu_script.spec
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
