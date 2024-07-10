@@ -16,13 +16,22 @@ jobs:
         python-version: '3.x'
 
     - name: Install dependencies
-      run: pip install pyinstaller
+      run: pip install pyinstaller fitz ultralytics transformers Pillow easyocr opencv-python-headless numpy openpyxl torch
 
     - name: Build executable from .spec file
       run: pyinstaller Sistema_Lector_de_Facturas_Windows.spec
 
-    - name: Upload Artifact
+    - name: List files in current directory
+      run: dir
+
+    - name: Upload .spec file
       uses: actions/upload-artifact@v2
       with:
-        name: executable
-        path: dist/
+        name: spec-file
+        path: Sistema_Lector_de_Facturas_Windows.spec
+
+    - name: Upload dist folder
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist-folder
+        path: dist
