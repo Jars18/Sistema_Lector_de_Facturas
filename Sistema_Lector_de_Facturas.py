@@ -25,12 +25,12 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
 ########################################## SECCION 1: CREACION O APERTURA DEL LIBRO DE TRABAJO ##########################################
-if getattr(sys, 'frozen', False):       # Obtener el directorio del ejecutable
+if getattr(sys, 'frozen', False):       #Obtenemos el directorio del ejecutable
     application_path = os.path.dirname(sys.executable)
 else:
     application_path = os.path.dirname(os.path.abspath(__file__))
 
-file_path = os.path.join(application_path, "Informacion.xlsx")  # Definir la ruta completa del archivo de Excel
+file_path = os.path.join(application_path, "Informacion.xlsx")  #Se define la ruta completa del archivo de Excel
                          
 if os.path.exists(file_path):                       #Si ya existe la ruta
     libro = openpyxl.load_workbook(file_path)       #carga el libro
@@ -67,8 +67,8 @@ else:
     for col_num, header in enumerate(encabezados, 1):   #Inserta los encabezados
         hoja.cell(row=1, column=col_num, value=header)  #en la primera fila
 
-    # Definir el formato condicional (REGLAS DE EXCEL PARA VALIDACION DE DATOS)
-    # En esta secion se define el formato de relleno, color de texto y color del borde
+    #Definimos el formato condicional (REGLAS DE EXCEL PARA VALIDACION DE DATOS)
+    #-En esta seccion se define el formato de relleno, color de texto y color del borde
     red_fill = PatternFill(start_color="ffc7ce", end_color="ffc7ce", fill_type="solid")
     red_font = Font(color="9c0006")
     red_border = Border(
@@ -134,7 +134,7 @@ else:
         bottom=Side(style='thin', color='006100')
     )
 
-    #Definir las fórmulas y rangos
+    #Definimos las fórmulas y rangos
     #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO FUERON RECONOCIDOS Y DEBIERON SERLO:
     #--DE FORMA GENERAL
     formulas_rangos = [
@@ -336,7 +336,7 @@ ruta_destino = 'img_of_pdf'             #Se extrae las facturas del pdf en la ca
 if not os.path.exists(ruta_destino):    #en el caso de que la carpeta no exista 
     os.makedirs(ruta_destino)           #entonces se crea la carpeta
 
-model = YOLO("best_ultimo.pt")    # Carga el modelo entrenado
+model = YOLO("best_ultimo.pt")    #Cargamos el modelo entrenado
 
 #Cargamos las librerias para el reconocimiento OCR
 reader_es = easyocr.Reader(['es'], gpu=True)  
@@ -348,11 +348,10 @@ modelocr=VisionEncoderDecoderModel.from_pretrained(model_version).to(device)
 
 ########################################## FUNCION 1: PROGRAMA DE EXTRACCION DE DATOS USANDO IA ##########################################
 def sistema_de_lectura():
-        
+    
     pdf_files_upper = glob.glob("PDFs_file/*.PDF")    #Obtenemos la lista de archivos con extensión .PDF
     pdf_files_lower = glob.glob("PDFs_file/*.pdf")    #Obtenemos la lista de archivos con extensión .pdf
     pdf_files = pdf_files_upper + pdf_files_lower     #Combinamos las listas
-    
 
     for pdf_file in pdf_files:
         pdf_document = fitz.open(pdf_file)      #Preprocesamiento del
@@ -365,7 +364,7 @@ def sistema_de_lectura():
             nombre_archivo = os.path.join(ruta_destino, f"factura{i}.jpg")      #con el nombre de su respectivo orden
             pix.save(nombre_archivo)                                            #guardando las imágenes en "img_of_pdf"
         
-        pdf_document.close()  # Cerramos el archivo PDF
+        pdf_document.close()  #Cerramos el archivo PDF
         
         datos_totales = []      #Los datos extraidos se guardan en este vector
         
@@ -378,29 +377,29 @@ def sistema_de_lectura():
         #Itera sobre todas las imágenes en el directorio que contiene las imágenes
         for image_path in image_paths:
             
-            results = model.predict(source=image_path, conf=0.5, save=False, line_width=2, show_labels=False, device=device, imgsz=864)      # Detecta los campos de la imagen
+            results = model.predict(source=image_path, conf=0.5, save=False, line_width=2, show_labels=False, device=device, imgsz=864)      #Detecta los campos de la imagen
 
-            # Iterar sobre los resultados de la detección
+            #Se itera sobre los resultados de la detección
             for result in results:
-                boxes = result.boxes.cpu().numpy()  # Obtenemos las coordenadas de los campos reconocidos
-                coords = boxes.xywhn                # coordenadas en el formato xywhn
-                clases = boxes.cls                  # y nombres de los campos reconocidos
+                boxes = result.boxes.cpu().numpy()  #Obtenemos las coordenadas de los campos reconocidos
+                coords = boxes.xywhn                #coordenadas en el formato xywhn
+                clases = boxes.cls                  #y nombres de los campos reconocidos
 
             image_easyocr = cv2.imread(image_path)
             height, width, _ = image_easyocr.shape
 
             textos_por_clase = [""] * 75
 
-            # Iterar sobre un respectivo campo reconocido
+            #Se itera sobre un respectivo campo reconocido
             for coord, clase in zip(coords, clases):
                 
-                # Convertir coordenadas normalizadas a coordenadas absolutas
+                #Convertimos coordenadas normalizadas a coordenadas absolutas
                 x_center = float(coord[0]) * width
                 y_center = float(coord[1]) * height
                 w = float(coord[2]) * width
                 h = float(coord[3]) * height
 
-                # Calcular las coordenadas de las esquinas del rectángulo
+                #Calculamos las coordenadas de las esquinas del rectángulo
                 x = int(x_center - w / 2)
                 y = int(y_center - h / 2)
                 x2 = int(x_center + w / 2)
@@ -445,7 +444,7 @@ def sistema_de_lectura():
                 #Si el texto es de "Actividad" o "Direccion" usamos EasyOCR
                 if clase==0 or clase==15:
                     
-                    roi_image = image_easyocr[y:y2, x:x2]   # Recortar la región de la imagen
+                    roi_image = image_easyocr[y:y2, x:x2]   #Recortamos la región de la imagen
                     
                     (height1, width1, canal) = roi_image.shape                          #Redimensionamos
                     redim_roi_image = cv2.resize(roi_image, (width1 * 7, height1 * 7))  #la imagen
@@ -528,21 +527,21 @@ def sistema_de_lectura():
     for pdf_file in pdf_files:      #Eliminamos los PDF procesados
         os.remove(pdf_file)
 
-    #
-    # Cargar el libro de trabajo y la hoja de datos
+    
+    #Cargamos el libro de trabajo y la hoja de datos
     wb = load_workbook(file_path)
-    ws = wb.active  # Asume que quieres trabajar con la hoja activa
+    ws = wb.active  #Trabajamos con la hoja activa
 
-    # Verificar si ya existe una tabla en la hoja
+    #Verificamos si ya existe una tabla en la hoja
     table_exists = any(
         isinstance(table, Table) for table in ws._tables.values()
     )
 
     if not table_exists:
-        # Crear una tabla en la hoja de datos (asegúrate de que los datos están en un rango apropiado)
+        #Creamos una tabla en la hoja de datos (asegúrate de que los datos están en un rango apropiado)
         tab = Table(displayName='TablaDatos', ref=ws.dimensions)
 
-        # Agregar estilo a la tabla con colores personalizados
+        #Agregamos estilo a la tabla con colores personalizados
         style = TableStyleInfo(
             name='TableStyleMedium9',
             showFirstColumn=False,
@@ -551,40 +550,38 @@ def sistema_de_lectura():
             showColumnStripes=True
         )
 
-        # Aplicar color a las filas y columnas de la tabla
-        # Usar el formato aRGB para los colores
-        header_fill = PatternFill(start_color="FFB1A0C7", end_color="FFB1A0C7", fill_type="solid")  # Morado
-        even_fill = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")  # Blanco
-        odd_fill = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")  # Blanco
+        #Aplicamos color a las filas y columnas de la tabla
+        header_fill = PatternFill(start_color="FFB1A0C7", end_color="FFB1A0C7", fill_type="solid")  #Morado
+        even_fill = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")  #Blanco
+        odd_fill = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")  #Blanco
 
-         # Definir el borde plomo
-        border_color = "D0D0D0"  # Gris claro
+        #Definimos el borde
+        border_color = "D0D0D0"  #Gris claro
         border_side = Side(border_style="thin", color=border_color)
         border = Border(left=border_side, right=border_side, top=border_side, bottom=border_side)
 
-         # Aplicar color de fondo y borde a las celdas de la tabla
-        # Aplicar color a las celdas de la tabla
+        #Aplicamos el color de fondo y borde a las celdas de la tabla
         for row in ws[tab.ref]:
             for cell in row:
-                if cell.row == ws[tab.ref][0][0].row:  # Si es la fila de encabezado
+                if cell.row == ws[tab.ref][0][0].row:  #Si es la fila de encabezado
                     cell.fill = header_fill
-                elif cell.row % 2 == 0:  # Filas pares
+                elif cell.row % 2 == 0:                #Filas pares
                     cell.fill = even_fill
-                else:  # Filas impares
+                else:                                  #Filas impares
                     cell.fill = odd_fill
                 cell.border = border
 
-        # Agregar el estilo a la tabla
+        #Agregamos el estilo a la tabla
         tab.tableStyleInfo = style
 
-        # Añadir la tabla al worksheet
+        #Añadimos el formato de tabla al worksheet
         ws.add_table(tab)
 
-    # Guardar el archivo
+    #Guardamos el archivo
     wb.save(file_path)
     #
 
-    # Actualizar el mensaje con la ruta relativa
+    #Actualiza el mensaje con la ruta relativa
     current_dir = os.getcwd()                                                                       #Obtenemos la ruta actual
     relative_path = os.path.relpath(file_path, current_dir)                                         #la convertimos en ruta relativa
     mensaje_datos_extraidos = "Los datos de las facturas han sido extraidos correctamente en:"      #para mostrar donde se 
@@ -709,5 +706,5 @@ canvas.create_text(ancho_ventana//2, 550, text="Desarrollado por JaRs", font=fue
 
 ventana.protocol("WM_DELETE_WINDOW", on_closing)    #Protocolo al cerrar la ventana
 
-ventana.mainloop()      # Ejecutar el bucle principal de tkinter
+ventana.mainloop()      #Ejecuta el bucle principal de tkinter
 ###########################FIN de la interfaz##########################################
