@@ -1,7 +1,6 @@
-
-##ESTE PROGRAMA SOLO ES UN EJECUTABLE DE PYTHON
+#SISTEMA LECTOR DE FACTURAS PARA MAC O LINUX
 import os
-from pdf2image import convert_from_path
+import fitz
 from ultralytics import YOLO
 import glob
 import re
@@ -16,27 +15,31 @@ from openpyxl.styles import PatternFill, Font, Border, Side
 from openpyxl.formatting.rule import FormulaRule
 import torch
 import sys
-##########################################INICIO DEL SISTEMA DE LECTURA##########################################
-# Crear o abrir el libro de trabajo
 
-# Obtener el directorio del ejecutable
-if getattr(sys, 'frozen', False):
-    # PyInstaller añade este atributo
+import tkinter as tk
+from tkinter import filedialog
+import shutil
+from PIL import Image, ImageTk
+
+from openpyxl import load_workbook
+from openpyxl.worksheet.table import Table, TableStyleInfo
+
+########################################## SECCION 1: CREACION O APERTURA DEL LIBRO DE TRABAJO ##########################################
+if getattr(sys, 'frozen', False):       # Obtener el directorio del ejecutable
     application_path = os.path.dirname(sys.executable)
 else:
     application_path = os.path.dirname(os.path.abspath(__file__))
 
-# Definir la ruta completa del archivo de Excel
-file_path = os.path.join(application_path, "Informacion.xlsx")
+file_path = os.path.join(application_path, "Informacion.xlsx")  # Definir la ruta completa del archivo de Excel
                          
-if os.path.exists(file_path):
-    libro = openpyxl.load_workbook(file_path)
-    hoja = libro.active
+if os.path.exists(file_path):                       #Si ya existe la ruta
+    libro = openpyxl.load_workbook(file_path)       #carga el libro
+    hoja = libro.active                             #para usarlo
 else:
-    libro = Workbook()
-    hoja = libro.active
+    libro = Workbook()                              #Si no existe lo crea con 
+    hoja = libro.active                             #las siguiente caracteristicas:
 
-    # Definir encabezados
+    #Encabezados
     encabezados = [
         "factura", "Fecha", "Senor", "NIT-CI", "Consumidor", "val_consumidor", "Medidor",
         "Direccion", "Ciudad o Localidad", "Actividad", "Carta Factura", "Remesa y Ruta", "Mes",
@@ -61,11 +64,11 @@ else:
         "Importe total a cancelar", "Resumen mes y ano", "Importe"
     ]
 
-    # Insertar encabezados en la primera fila
-    for col_num, header in enumerate(encabezados, 1):
-        hoja.cell(row=1, column=col_num, value=header)
+    for col_num, header in enumerate(encabezados, 1):   #Inserta los encabezados
+        hoja.cell(row=1, column=col_num, value=header)  #en la primera fila
 
-    # Definir el formato condicional
+    # Definir el formato condicional (REGLAS DE EXCEL PARA VALIDACION DE DATOS)
+    # En esta secion se define el formato de relleno, color de texto y color del borde
     red_fill = PatternFill(start_color="ffc7ce", end_color="ffc7ce", fill_type="solid")
     red_font = Font(color="9c0006")
     red_border = Border(
@@ -74,7 +77,6 @@ else:
         top=Side(style='thin', color='9c0006'),
         bottom=Side(style='thin', color='9c0006')
     )
-
 
     blue_fill = PatternFill(start_color="b8cce4", end_color="b8cce4", fill_type="solid")
     blue_font = Font(color="1f497d")
@@ -132,9 +134,9 @@ else:
         bottom=Side(style='thin', color='006100')
     )
 
-    # Definir las fórmulas y rangos
-    #ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO FUERON RECONOCIDOS Y DEBIERON SERLO
-    #DE FORMA GENERAL
+    #Definir las fórmulas y rangos
+    #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO FUERON RECONOCIDOS Y DEBIERON SERLO:
+    #--DE FORMA GENERAL
     formulas_rangos = [
         ('=AND(NOT(ISBLANK($A2)), ISBLANK(B2))', "B2:I1048576"),
         ('=AND(NOT(ISBLANK($A2)), ISBLANK(L2))', "L2:P1048576"),
@@ -152,7 +154,7 @@ else:
         rule = FormulaRule(formula=[formula], fill=red_fill, font=red_font, border=red_border)
         hoja.conditional_formatting.add(rango, rule)
 
-    #CON CONDICIONANTE: SI LECTURA MEDIDOR ANTERIOR FUE RECONOCIDO TAMBIEN DEBE SER RECONOCIDO LECTURA MEDIDOR ACTUAL Y VICEVERSA
+    #--CON CONDICIONANTE: SI LECTURA MEDIDOR ANTERIOR FUE RECONOCIDO TAMBIEN DEBE SER RECONOCIDO LECTURA MEDIDOR ACTUAL Y VICEVERSA
     formulas_rangos = [
         ('=AND(NOT(ISBLANK($Q2)), ISBLANK($R2))', "R2:R1048576"),
         ('=AND(NOT(ISBLANK($R2)), ISBLANK($Q2))', "Q2:Q1048576")
@@ -162,19 +164,19 @@ else:
         rule = FormulaRule(formula=[formula], fill=red_fill, font=red_font, border=red_border)
         hoja.conditional_formatting.add(rango, rule)
 
-    #CON CONDICIONANTE: SI UNA LECTURA DE BLOQUE FUE IDENTIFICADO TODOS LOS DEMAS CAMPOS DE LECTURA DE BLOQUE TAMBIEN DEBERIAN SER IDENTIFICADOS
+    #--CON CONDICIONANTE: SI UNA LECTURA DE BLOQUE FUE IDENTIFICADO TODOS LOS DEMAS CAMPOS DE LECTURA DE BLOQUE TAMBIEN DEBERIAN SER IDENTIFICADOS
     formula2 = '=AND(SUM(--(NOT(ISBLANK($T2:$W2)))) > 0, ISBLANK(S2))'
     rango2 = "S2:AA1048576"
     rule2 = FormulaRule(formula=[formula2], fill=red_fill, font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
-    #CON CONDICIONANTE: SI UNA POTENCIA LEIDA DE BLOQUE BAJO O MEDIO FUE IDENTIFICADA TODOS LOS CAMPOS DE POTENCIA LEIDA DEBEN SER RECONOCIDO
+    #--CON CONDICIONANTE: SI UNA POTENCIA LEIDA DE BLOQUE BAJO O MEDIO FUE IDENTIFICADA TODOS LOS CAMPOS DE POTENCIA LEIDA DEBEN SER RECONOCIDO
     formula2 = '=AND(OR(NOT(ISBLANK($AN2)), NOT(ISBLANK($AM2))), OR(ISBLANK($AM2), ISBLANK($AL2), ISBLANK($AN2)))'
     rango2 = "AL2:AN1048576"
     rule2 = FormulaRule(formula=[formula2], fill=red_fill, font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
-    #CON CONDICIONANTE: SI POTENCIA A FACTURAR FUE RECONOCIDO POTENCIA LEIDA BLOQUE ALTO TAMBIEN DEBE SER RECONOCIDO Y VICEVERSA
+    #--CON CONDICIONANTE: SI POTENCIA A FACTURAR FUE RECONOCIDO POTENCIA LEIDA BLOQUE ALTO TAMBIEN DEBE SER RECONOCIDO Y VICEVERSA
     formulas_rangos = [
         ('=AND(NOT(ISBLANK($AO2)), ISBLANK($AL2))', "AL2:AL1048576"),
         ('=AND(NOT(ISBLANK($AL2)), ISBLANK($AO2))', "AO2:AO1048576")
@@ -184,7 +186,7 @@ else:
         rule = FormulaRule(formula=[formula], fill=red_fill, font=red_font, border=red_border)
         hoja.conditional_formatting.add(rango, rule)
 
-    #CON CONDICIONANTE: SI ENERGIA REACTIVA FUE RECONOCIDO FACTOR DE POTENCIA TAMBIEN DEBE SER RECONOCIDA Y VICEVERSA
+    #--CON CONDICIONANTE: SI ENERGIA REACTIVA FUE RECONOCIDO FACTOR DE POTENCIA TAMBIEN DEBE SER RECONOCIDA Y VICEVERSA
     formulas_rangos = [
         ('=AND(NOT(ISBLANK($AR2)), ISBLANK($AQ2))', "AQ2:AQ1048576"),
         ('=AND(NOT(ISBLANK($AQ2)), ISBLANK($AR2))', "AR2:AR1048576")
@@ -194,7 +196,7 @@ else:
         rule = FormulaRule(formula=[formula], fill=red_fill, font=red_font, border=red_border)
         hoja.conditional_formatting.add(rango, rule)
 
-    #CON CONDICIONANTE: SI EXCESO DE POTENCIA FUE RECONOCIDO EL IMPORTE POR EXCESO DE POTENCIA DEBER SERLO TAMBIEN Y VICEVERSA
+    #--CON CONDICIONANTE: SI EXCESO DE POTENCIA FUE RECONOCIDO EL IMPORTE POR EXCESO DE POTENCIA DEBER SERLO TAMBIEN Y VICEVERSA
     formulas_rangos = [
         ('=AND(NOT(ISBLANK($AY2)), ISBLANK($AP2))', "AP2:AP1048576"),
         ('=AND(NOT(ISBLANK($AP2)), ISBLANK($AY2))', "AY2:AY1048576")
@@ -203,9 +205,19 @@ else:
     for formula, rango in formulas_rangos:
         rule = FormulaRule(formula=[formula], fill=red_fill, font=red_font, border=red_border)
         hoja.conditional_formatting.add(rango, rule)
+    
+    #--CON CONDICIONANTE: SI POTENCIA LEIDA FUE RECONOCIDO MULTIPLICADOR DEBERIA SER RECONOCIDO Y VICEVERSA
+    formulas_rangos = [
+        ('=AND(NOT(ISBLANK($AL2)), ISBLANK($AC2))', "AC2:AC1048576"),
+        ('=AND(NOT(ISBLANK($AL2)), ISBLANK($AL2))', "AL2:AL1048576")
+    ]
+    rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=red_fill, font=red_font, border=red_border)
+    for formula, rango in formulas_rangos:
+        rule = FormulaRule(formula=[formula], fill=red_fill, font=red_font, border=red_border)
+        hoja.conditional_formatting.add(rango, rule)
 
     #############################################################################
-    #ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE DEBEN SER EN FORMATO NUMERICO 
+    #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE DEBEN SER EN FORMATO NUMERICO 
     formulas_rangos = [
         ('=AND(NOT(ISNUMBER($D2)), NOT(ISBLANK($D2)))', "D2:D1048576"),
         ('=AND(NOT(ISNUMBER($G2)), NOT(ISBLANK($G2)))', "G2:G1048576"),
@@ -220,7 +232,7 @@ else:
         hoja.conditional_formatting.add(rango, rule)
 
     #############################################################################
-    #ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO DEBEN SER NEGATIVOS 
+    #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO DEBEN SER NEGATIVOS 
     formulas_rangos = [
         ('=$D2<0', "D2:D1048576"),
         ('=$G2<0', "G2:G1048576"),
@@ -235,7 +247,7 @@ else:
         hoja.conditional_formatting.add(rango, rule)
 
     #############################################################################
-    #ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO DEBEN TENER DECIMALES
+    #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO DEBEN TENER DECIMALES
     formulas_rangos = [
         ('=ROUND($D2,0)<>$D2', "D2:D1048576"),
         ('=ROUND($G2,0)<>$G2', "G2:G1048576"),
@@ -249,63 +261,63 @@ else:
         hoja.conditional_formatting.add(rango, rule)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE Total energia a facturar = Energia consumida en n dias + Energia estimada + Energia adicional por cambio de medidor + Menos devolucion kWh + Perdidas en el transformador
+    #-ESTA REGLA ES PARA VERIFICAR QUE Total energia a facturar = Energia consumida en n dias + Energia estimada + Energia adicional por cambio de medidor + Menos devolucion kWh + Perdidas en el transformador
     formula2 = '=$AI2<>($AD2+$AE2+$AF2+$AG2+$AH2)'
     rango2 = "AI2:AI1048576"
     rule2 = FormulaRule(formula=[formula2], font=blue_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE Importe por consumo = Importe por Cargo Fijo + Importe por Energia + Importe por Energia Bloque Alto + Importe por Energia Bloque Medio + Importe por Energia Bloque Bajo + Importe por potencia + Importe por exceso de potencia fuera de punta 
+    #-ESTA REGLA ES PARA VERIFICAR QUE Importe por consumo = Importe por Cargo Fijo + Importe por Energia + Importe por Energia Bloque Alto + Importe por Energia Bloque Medio + Importe por Energia Bloque Bajo + Importe por potencia + Importe por exceso de potencia fuera de punta 
     formula2 = '=$AZ2<>($AS2+$AT2+$AU2+$AW2+$AV2+$AY2+$AX2)'
     rango2 = "AS2:AZ1048576"
     rule2 = FormulaRule(formula=[formula2], fill=yellow_fill, font=yellow_font, border=yellow_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE Importe total por el suministro = Importe total por el consumo + Mas debito consumo no facturado – Menos crédito por Devolucion + Importe por bajo factor de potencia + Mas cargo por conexión + Mas intereses por mora 
+    #-ESTA REGLA ES PARA VERIFICAR QUE Importe total por el suministro = Importe total por el consumo + Mas debito consumo no facturado – Menos crédito por Devolucion + Importe por bajo factor de potencia + Mas cargo por conexión + Mas intereses por mora 
     formula2 = '=$BG2<>($BA2+$BE2-$BF2+$BB2+$BD2+$BC2)'
     rango2 = "BA2:BG1048576"
     rule2 = FormulaRule(formula=[formula2], fill=purple_fill, font=purple_font, border=purple_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE Importe  total factura = Importe total por el suministro + Tasas por alumbrado publico + Tasas por aseo urbano 
+    #-ESTA REGLA ES PARA VERIFICAR QUE Importe  total factura = Importe total por el suministro + Tasas por alumbrado publico + Tasas por aseo urbano 
     formula2 = '=$BJ2<>($BG2+$BH2+$BI2)'
     rango2 = "BG2:BJ1048576"
     rule2 = FormulaRule(formula=[formula2], fill=brown_fill, font=brown_font, border=brown_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE Importe del mes a cancelar = Importe total factura + Mas crédito aplicado en cuenta corriente – Menos crédito anterior – Menos reducción calidad servicio técnico – Pagos adelantados aplicados + Mas depósito de garantía.
+    #-ESTA REGLA ES PARA VERIFICAR QUE Importe del mes a cancelar = Importe total factura + Mas crédito aplicado en cuenta corriente – Menos crédito anterior – Menos reducción calidad servicio técnico – Pagos adelantados aplicados + Mas depósito de garantía.
     formula2 = '=$BP2<>($BJ2+$BL2-$BM2-$BN2-$BO2+$BK2)'
     rango2 = "BJ2:BP1048576"
     rule2 = FormulaRule(formula=[formula2], fill=orange_fill, font=orange_font, border=orange_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE Importe total a cancelar = Importe del mes a cancelar + Mas deudas pendientes de energía + Deudas pendientes de tasa de aseo – Menos pago adelantado
+    #-ESTA REGLA ES PARA VERIFICAR QUE Importe total a cancelar = Importe del mes a cancelar + Mas deudas pendientes de energía + Deudas pendientes de tasa de aseo – Menos pago adelantado
     formula2 = '=$BU2<>($BP2+$BQ2+$BR2-$BS2)'
     rango2 = "BP2:BU1048576"
     rule2 = FormulaRule(formula=[formula2], fill=green_fill, font=green_font, border=green_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE CONSUMIDOR ES CORRECTO
+    #-ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE CONSUMIDOR ES CORRECTO
     formula2 = '=$F2<>$E2'
     rango2 = "E2:F1048576"
     rule2 = FormulaRule(formula=[formula2], font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE TOTAL ENERGIA A FACTURAR
+    #-ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE TOTAL ENERGIA A FACTURAR
     formula2 = '=$AI2<>$AJ2'
     rango2 = "AI2:AJ1048576"
     rule2 = FormulaRule(formula=[formula2], font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
-    #ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE CONSUMIDOR ES CORRECTO
+    #-ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE CONSUMIDOR ES CORRECTO
     formulas_rangos = [
         ('=$BW2<>$BU2', "BU2:BU1048576"),
         ('=$BW2<>$BU2', "BW2:BW1048576")
@@ -317,15 +329,14 @@ else:
 
     # Guardar el archivo de Excel con los cambios
     libro.save(file_path)
+########################################## FIN DE LA SECCION 1 ##########################################
 
-
+########################################## SECCION 2: CREACION O APERTURA DE CARPETAS Y MODELOS DE IA ##########################################
 ruta_destino = 'img_of_pdf'             #Se extrae las facturas del pdf en la carpeta "img_of_pdf" 
 if not os.path.exists(ruta_destino):    #en el caso de que la carpeta no exista 
     os.makedirs(ruta_destino)           #entonces se crea la carpeta
 
-#El modelo usado antes de 74clases es modelo_espacios_mas_especificos.pt, que dio buenos resultados
-model = YOLO("/Users/jurgenalejandrorocasalvosanchez/Documents/Programa_PDG/Lector_de_Facturas/best_ultimo.pt")    # Carga el modelo entrenado
-#model = YOLO("/Users/jurgenalejandrorocasalvosanchez/Documents/Programa_PDG/Lector_de_Facturas/best_specific_spaces_1000img-74clases.pt")    # Carga el modelo entrenado
+model = YOLO("best_ultimo.pt")    # Carga el modelo entrenado
 
 #Cargamos las librerias para el reconocimiento OCR
 reader_es = easyocr.Reader(['es'], gpu=True)  
@@ -333,40 +344,41 @@ device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if 
 model_version="microsoft/trocr-small-printed"
 processor=TrOCRProcessor.from_pretrained(model_version)
 modelocr=VisionEncoderDecoderModel.from_pretrained(model_version).to(device)
+########################################## FIN DE LA SECCION 2 ##########################################
 
+########################################## FUNCION 1: PROGRAMA DE EXTRACCION DE DATOS USANDO IA ##########################################
 def sistema_de_lectura():
-    # Obtener la lista de archivos con extensión .PDF
-    pdf_files_upper = glob.glob("PDFs_file/*.PDF")
-
-    # Obtener la lista de archivos con extensión .pdf
-    pdf_files_lower = glob.glob("PDFs_file/*.pdf")
-
-    # Combinar ambas listas
-    pdf_files = pdf_files_upper + pdf_files_lower
-
-
-    for pdf_file in pdf_files:                                                  # Procesamos cada archivo PDF
-        images = convert_from_path(pdf_file)                                    # y convertimos el PDF a imágenes
-        for i, img in enumerate(images, start=1):                               # comenzando desde la imagen 1
-            nombre_archivo = os.path.join(ruta_destino, f"factura{i}.jpg")      # hasta la ultima imagen 
-            img.save(nombre_archivo)                                            # guardandolas en "img_of_pdf"
         
-        # Esta sección reconoce los campos etiquetados y los guarda en un vector
+    pdf_files_upper = glob.glob("PDFs_file/*.PDF")    #Obtenemos la lista de archivos con extensión .PDF
+    pdf_files_lower = glob.glob("PDFs_file/*.pdf")    #Obtenemos la lista de archivos con extensión .pdf
+    pdf_files = pdf_files_upper + pdf_files_lower     #Combinamos las listas
+    
+
+    for pdf_file in pdf_files:
+        pdf_document = fitz.open(pdf_file)      #Preprocesamiento del
+        zoom_x = 3.0                            #.PDF para que las imagenes
+        zoom_y = 3.0                            #sean extraidas
+        mat = fitz.Matrix(zoom_x, zoom_y)       #con mejor calidad
+    
+        for i, page in enumerate(pdf_document, start=1):                        #Cada pagina del PDF
+            pix = page.get_pixmap(matrix=mat, alpha=False)                      #la guardamos como imagen
+            nombre_archivo = os.path.join(ruta_destino, f"factura{i}.jpg")      #con el nombre de su respectivo orden
+            pix.save(nombre_archivo)                                            #guardando las imágenes en "img_of_pdf"
+        
+        pdf_document.close()  # Cerramos el archivo PDF
         
         datos_totales = []      #Los datos extraidos se guardan en este vector
         
-        def extract_number(filename):
-            # Usa una expresión regular para encontrar números en el nombre del archivo
-            match = re.search(r'\d+', filename)
-            return int(match.group()) if match else float('inf')  # Retorna inf si no hay número para que estos archivos vayan al final
+        def extract_number(filename):                               #Funcion para ordenar numericamente.
+            match = re.search(r'\d+', filename)                     #Retorna inf si no hay número 
+            return int(match.group()) if match else float('inf')    #para que estos archivos vayan al final
 
-        # Obtén una lista de todas las imágenes en el directorio, ordenadas numéricamente
-        image_paths = sorted(glob.glob(os.path.join(ruta_destino, "*.jpg")), key=lambda x: extract_number(os.path.basename(x)))
+        image_paths = sorted(glob.glob(os.path.join(ruta_destino, "*.jpg")), key=lambda x: extract_number(os.path.basename(x)))     #Lista de todas las imágenes ordenadas numéricamente
 
-# Iterar sobre todas las imágenes en el directorio que contiene las imágenes
+        #Itera sobre todas las imágenes en el directorio que contiene las imágenes
         for image_path in image_paths:
             
-            results = model.predict(source=image_path, conf=0.5, save=False, line_width=2, show_labels=False, device='mps', imgsz=864)      # Detecta los campos de la imagen
+            results = model.predict(source=image_path, conf=0.5, save=False, line_width=2, show_labels=False, device=device, imgsz=864)      # Detecta los campos de la imagen
 
             # Iterar sobre los resultados de la detección
             for result in results:
@@ -394,17 +406,17 @@ def sistema_de_lectura():
                 x2 = int(x_center + w / 2)
                 y2 = int(y_center + h / 2)
 
+                #Algunos errores recurrentes que se deben filtrar, eliminar o corregir
                 corrections = {
-                r"\b s\b|\b1ss\b|\bC7 \b|\bVn 0\b|\bNIT\b|\bSn\b|\b~\b|\bs\b|\b;\b|\b =\b|\b: \b|\b:\b|\b. \b": "",
-                r"=|~|\*": "",
+                r" =|~|\*|:| =|: |\. ": "",
                 r'"': '',
-                "=":"",
-                "EETG |EETG.|EETG|EETC|EETC |E. ET.C. ": "EETC ",
+                "=": "",
                 "CONSTRUCGION": "CONSTRUCCION",
+                "EETG |EETG.|EETG|EETC|EETC |E. ET.C. ": "EETC ",
                 "GI-": "G1-",
                 "LAPAZ": "LA PAZ",
                 "ELALTO": "EL ALTO",
-                "-GID-|-GDD-":"-GD-",
+                "-GID-|-GDD-|-GP-":"-GD-",
                 "-ABP-|-AEF-|-AER-":"-ABR-",
                 "-OCI-|-OCL-":"-OCT-",
                 "-AG0-":"-AGO-",
@@ -412,7 +424,7 @@ def sistema_de_lectura():
                 "ABFIL|ABRL|ABRII|ABFL|ABELL|AERIL":"ABRIL",
                 "JUNIC":"JUNIO",
                 "JULIC|JULI0":"JULIO",
-                "SEPTIERBRE|SEPTIMEMBRE|SEPTIERMBRE|SEPTIEMBERE|SEPTEMBERE|SEPTEMBRE|SEPTIMBRE":"SEPTIEMBRE",
+                "SEPTIERBRE|SEPTIMEMBRE|SEPTIERMBRE|SEPTIEMBERE|SEPTEMBERE|SEPTEMBRE|SEPTIMBRE|SEPTLEMBRE":"SEPTIEMBRE",
                 "DICIERBRE|DICLEMBRE|DICIERMBRE|DICIMBRE|DICIERNBRE|DICIERHBRE|DICEMBRE":"DICIEMBRE",
                 "NOVIERBRE|NOVIMBRE|NOVIEWBRE":"NOVIEMBRE",
                 "ESTAGION":"ESTACION",
@@ -421,7 +433,7 @@ def sistema_de_lectura():
                 "2800048029":"280048029",
                 "985888-1-5":"985688-1-5",
                 "985888-5":"985688-5",
-                "LECTURA NORMAT|LECTURA NORMAI|LECTURA NOMMAL|LECTURA NOMAL":"LECTURA NORMAL",
+                "LECTURA NORMAT|LECTURA NORMAI|LECTURA NOMMAL|LECTURA NOMAL|LECTURANORMAL":"LECTURA NORMAL",
                 "LECLURA":"LECTURA",
                 r"\bO KWH\b|\bO KWN\b|\bO KVARH\b|\bO KVARN\b|\bO KVAFN\b|\bO KW\b": "0",
                 r"\bOKWH\b|\bOKWN\b|\bOKVARH\b|\bOKVARN\b|\bOKVAFN\b|\bOKW\b": "0",
@@ -430,54 +442,52 @@ def sistema_de_lectura():
                 "ENTE ":"ENFE "
                 }
 
+                #Si el texto es de "Actividad" o "Direccion" usamos EasyOCR
                 if clase==0 or clase==15:
-                    # Recortar la región de la imagen
-                    roi_image = image_easyocr[y:y2, x:x2]
-
-                    # Redimensionamiento
-                    (height1, width1, canal) = roi_image.shape
-                    redim_roi_image = cv2.resize(roi_image, (width1 * 7, height1 * 7))
-
-                    # Aplicar reducción de ruido (noise reduction)
-                    denoised_image = cv2.GaussianBlur(redim_roi_image, (5, 5), 0)
-
-                    # Aumento de nitidez
-                    kernel_sharpening = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-                    sharpened_image = cv2.filter2D(denoised_image, -1, kernel_sharpening)
-
-                    # Binarización
-                    gray_image = cv2.cvtColor(sharpened_image, cv2.COLOR_BGR2GRAY)
-                    _, binary_image = cv2.threshold(gray_image, 150, 255, cv2.THRESH_TOZERO)
-
-                    valor = reader_es.readtext(binary_image, detail=0, paragraph=True)
-
-                    for text in valor:
-                        for pattern, replacement in corrections.items():
-                            text = re.sub(pattern, replacement, text)
-                    valor=text
                     
+                    roi_image = image_easyocr[y:y2, x:x2]   # Recortar la región de la imagen
+                    
+                    (height1, width1, canal) = roi_image.shape                          #Redimensionamos
+                    redim_roi_image = cv2.resize(roi_image, (width1 * 7, height1 * 7))  #la imagen
+
+                    denoised_image = cv2.GaussianBlur(redim_roi_image, (5, 5), 0)   #Aplicamos reducción de ruido
+
+                    kernel_sharpening = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]]) #Aumentamos
+                    sharpened_image = cv2.filter2D(denoised_image, -1, kernel_sharpening)   #la nitidez
+
+                    gray_image = cv2.cvtColor(sharpened_image, cv2.COLOR_BGR2GRAY)              #Imagen en blanco y negro
+                    _, binary_image = cv2.threshold(gray_image, 150, 255, cv2.THRESH_TOZERO)    #Binarización
+
+                    valor = reader_es.readtext(binary_image, detail=0, paragraph=True)  #Extraemos el texto
+
+                    for text in valor:                                          #Si se detecta uno de las
+                        for pattern, replacement in corrections.items():        #errores mostrados anteriormente
+                            text = re.sub(pattern, replacement, text)           #se lo corrige
+                    valor=text                                                  #y se lo exporta a Excel
+
+                #Si el texto es de cualquier otra clase usamos TrOCR    
                 else:
-                    image = Image.open(image_path).convert("RGB")
-                    crp_image=image.crop((x,y,x2,y2))
+                    image = Image.open(image_path).convert("RGB")   #Preprocesa la imagen
+                    crp_image=image.crop((x,y,x2,y2))               #y la seccion que nos interesa
                     
-                    pixel_values=processor(crp_image, return_tensors="pt").pixel_values.to(device)
-                    generated_ids = modelocr.generate(pixel_values, max_new_tokens=50)
-                    text_easy_ocr=processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+                    pixel_values=processor(crp_image, return_tensors="pt").pixel_values.to(device)      #Corta la imagen
+                    generated_ids = modelocr.generate(pixel_values, max_new_tokens=50)                  #en la seccion que nos interesa
+                    text_easy_ocr=processor.batch_decode(generated_ids, skip_special_tokens=True)[0]    #y extrae el texto
 
-                    for pattern, replacement in corrections.items():
-                        text_easy_ocr = re.sub(pattern, replacement, text_easy_ocr)
+                    for pattern, replacement in corrections.items():                    #Si hay error 
+                        text_easy_ocr = re.sub(pattern, replacement, text_easy_ocr)     #lo corrige
 
+                    #Se asigna el respectivo tipo de valor a cada texto extraido (Texto o numero)
                     texto_sin_puntos = text_easy_ocr.replace(",", "").replace(".", "").replace(" - ","").replace(" -","").replace("- ","").replace("-","")
                     if texto_sin_puntos.isnumeric():
-                        # Consideramos que el último punto o coma es el separador decimal si existe
                         if ',' in text_easy_ocr or '.' in text_easy_ocr:
-                            if text_easy_ocr.count('.') > 1:  # Si hay más de un punto
-                                partes = text_easy_ocr.split('.')
+                            if text_easy_ocr.count('.') > 1:                #Si hay más de un punto
+                                partes = text_easy_ocr.split('.')           #elimina el primero
                                 texto_sin_comas = ''.join(partes[:-1]) + '.' + partes[-1]
                             elif text_easy_ocr.count('.') == 0 and text_easy_ocr.count(',') == 1:
-                                texto_sin_comas = text_easy_ocr.replace(",", ".")
+                                texto_sin_comas = text_easy_ocr.replace(",", ".") 
                             else:
-                                texto_sin_comas = text_easy_ocr.replace(",", "")  # Elimina todas las comas
+                                texto_sin_comas = text_easy_ocr.replace(",", "")  #Elimina todas las comas
                             try:
                                 valor = float(texto_sin_comas)
                             except ValueError:
@@ -489,68 +499,130 @@ def sistema_de_lectura():
                     else:
                         valor = text_easy_ocr
 
-                # Lista de mapeo que define cómo los valores de clase se corresponden a las posiciones en textos_por_clase
-                mapeo_clase_a_posicion = [9, 19, 18, 20, 25, 24, 26, 22, 21, 23, 10, 13, 8, 4, 69, 7, 30, 42, 31, 29, 41, 43, 1, 15, 14, 74, 67, 44, 51, 45, 46, 48, 47, 50, 49, 53, 72, 61, 52, 58, 17, 16, 55, 56, 62, 68, 54, 6, 57, 32, 70, 65, 12, 28, 3, 71, 66, 33, 36, 37, 39, 38, 40, 11, 73, 2, 59, 60, 27, 34, 35, 63, 64, 5]
+                mapeo_clase_a_posicion = [9, 19, 18, 20, 25, 24, 26, 22, 21, 23, 10, 13, 8, 4, 69, 7, 30, 42, 31, 29, 41, 43, 1, 15, 14, 74, 67, 44, 51, 45, 46, 48, 47, 50, 49, 53, 72, 61, 52, 58, 17, 16, 55, 56, 62, 68, 54, 6, 57, 32, 70, 65, 12, 28, 3, 71, 66, 33, 36, 37, 39, 38, 40, 11, 73, 2, 59, 60, 27, 34, 35, 63, 64, 5]    #Lista de mapeo que define cómo los valores de clase corresponden a las posiciones en textos_por_clase
 
-                # Asigna el valor a la posición correspondiente en textos_por_clase usando el mapeo
-                textos_por_clase[mapeo_clase_a_posicion[int(clase)]] = valor
+                textos_por_clase[mapeo_clase_a_posicion[int(clase)]] = valor    #Asigna el valor a la posición correspondiente en textos_por_clase usando el mapeo
                 
-            textos_por_clase[0] = re.sub('img_of_pdf/|.jpg', '',re.sub('PDFs_file/','',pdf_file) + "_" + image_path )
-            datos_totales.append(textos_por_clase)
+            textos_por_clase[0] = re.sub('img_of_pdf/|.jpg', '',re.sub('PDFs_file/','',pdf_file) + "_" + image_path )   #La primera celda de la fila es el nombre del PDF + el numero de imagen que fue procesada
+            datos_totales.append(textos_por_clase)  #Se van guardando todos los textos y numeros extraidos
 
-        # Encontrar la primera fila vacía
-        fila_inicio = hoja.max_row + 1
+        fila_inicio = hoja.max_row + 1  #Encontrar la primera fila vacía
 
-        # Escribir los datos en la hoja
+        #Escribir los datos en la hoja
         for fila, datos_imagen in enumerate(datos_totales, start=fila_inicio):
             for columna, dato_clase in enumerate(datos_imagen, start=1):
                 if isinstance(dato_clase, list):
-                    valor = ', '.join(map(str, dato_clase))  # Convertir la lista a una cadena separada por comas
+                    valor = ', '.join(map(str, dato_clase))  #Convertir la lista a una cadena separada por comas
                 else:
                     valor = dato_clase
                 celda = hoja.cell(row=fila, column=columna)
                 celda.value = valor
 
-        # Eliminar las imágenes procesadas
-        for image_path in glob.glob(os.path.join(ruta_destino, "*.jpg")):
-            os.remove(image_path)
+        for image_path in glob.glob(os.path.join(ruta_destino, "*.jpg")):   #Elimina las imágenes procesadas
+            os.remove(image_path)                                           #de img_of_pdf
 
-    # Guardar el libro de trabajo en un archivo
     hoja.freeze_panes = hoja['B2']  #Inmoviliza paneles
-    libro.save(file_path)
-    libro.close()
-    for pdf_file in pdf_files:
+    libro.save(file_path)           #Guardamos el libro de trabajo
+    libro.close()                   #Cerramos el libro
+    
+    for pdf_file in pdf_files:      #Eliminamos los PDF procesados
         os.remove(pdf_file)
 
+    #
+    # Cargar el libro de trabajo y la hoja de datos
+    wb = load_workbook(file_path)
+    ws = wb.active  # Asume que quieres trabajar con la hoja activa
+
+    # Verificar si ya existe una tabla en la hoja
+    table_exists = any(
+        isinstance(table, Table) for table in ws._tables.values()
+    )
+
+    if not table_exists:
+        # Crear una tabla en la hoja de datos (asegúrate de que los datos están en un rango apropiado)
+        tab = Table(displayName='TablaDatos', ref=ws.dimensions)
+
+        # Agregar estilo a la tabla con colores personalizados
+        style = TableStyleInfo(
+            name='TableStyleMedium9',
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=True
+        )
+
+        # Aplicar color a las filas y columnas de la tabla
+        # Usar el formato aRGB para los colores
+        header_fill = PatternFill(start_color="FFB1A0C7", end_color="FFB1A0C7", fill_type="solid")  # Morado
+        even_fill = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")  # Blanco
+        odd_fill = PatternFill(start_color="FFFFFFFF", end_color="FFFFFFFF", fill_type="solid")  # Blanco
+
+         # Definir el borde plomo
+        border_color = "D0D0D0"  # Gris claro
+        border_side = Side(border_style="thin", color=border_color)
+        border = Border(left=border_side, right=border_side, top=border_side, bottom=border_side)
+
+         # Aplicar color de fondo y borde a las celdas de la tabla
+        # Aplicar color a las celdas de la tabla
+        for row in ws[tab.ref]:
+            for cell in row:
+                if cell.row == ws[tab.ref][0][0].row:  # Si es la fila de encabezado
+                    cell.fill = header_fill
+                elif cell.row % 2 == 0:  # Filas pares
+                    cell.fill = even_fill
+                else:  # Filas impares
+                    cell.fill = odd_fill
+                cell.border = border
+
+        # Agregar el estilo a la tabla
+        tab.tableStyleInfo = style
+
+        # Añadir la tabla al worksheet
+        ws.add_table(tab)
+
+    # Guardar el archivo
+    wb.save(file_path)
+    #
+
     # Actualizar el mensaje con la ruta relativa
-    current_dir = os.getcwd()
-    relative_path = os.path.relpath(file_path, current_dir)
-    mensaje_datos_extraidos.config(text=f"Los datos de las facturas han sido extraidos correctamente en:")
-    mensaje_datos_extraidos2.config(text=f"{relative_path}")
-    
+    current_dir = os.getcwd()                                                                       #Obtenemos la ruta actual
+    relative_path = os.path.relpath(file_path, current_dir)                                         #la convertimos en ruta relativa
+    mensaje_datos_extraidos = "Los datos de las facturas han sido extraidos correctamente en:"      #para mostrar donde se 
+    canvas.itemconfig(mensaje_datos_extraidos_id, text=mensaje_datos_extraidos)                     #guardo el Excel
+    mensaje_datos_extraidos2 = f"{relative_path}"                                                   #con los datos extraidos 
+    canvas.itemconfig(mensaje_datos_extraidos2_id, text=mensaje_datos_extraidos2)                   #e indicar el fin de la extraccion
     pass
+########################################## FIN DE FUNCION 1 ##########################################
 
+########################################## FUNCION 2: PROGRAMA PARA MOSTRAR MENSAJES DE INICIO Y FIN EN LA VENTANA DEL PROGRAMA ##########################################
 def iniciar_lectura():
-    mensaje.config(text="Espere mientras se extraen los datos...")
-    mensaje_datos_extraidos.config(text="")
-    mensaje_datos_extraidos2.config(text="")
-    ventana.update()  # Actualiza la interfaz gráfica para mostrar el mensaje
-    sistema_de_lectura()
-    mensaje.config(text="")
-##########################################FIN del sistema##########################################
+    mensaje = "Espere mientras se extraen los datos..."     #Este mensaje se muestra cuando se
+    canvas.itemconfig(mensaje_id, text=mensaje)             #inicia el proceso de extraer los datos
 
-import tkinter as tk
-from tkinter import filedialog
-import shutil
-import os
-from PIL import Image, ImageTk
+    mensaje_datos_extraidos = ""                                                #Cuando se estan extrayendo nuevos datos
+    canvas.itemconfig(mensaje_datos_extraidos_id, text=mensaje_datos_extraidos) #se limpia este mensaje
+
+    mensaje_datos_extraidos2 = ""                                                   #Cuando se estan extrayendo nuevos datos
+    canvas.itemconfig(mensaje_datos_extraidos2_id, text=mensaje_datos_extraidos2)   #se limpia este mensaje
+
+    ventana.update()    #Actualiza la interfaz gráfica para mostrar el mensaje
+
+    sistema_de_lectura()    #Iniciamos el proceso de extraccion de datos
+    
+    mensaje = ""                                    #Cuando se terminan de extraer los datos
+    canvas.itemconfig(mensaje_id, text=mensaje)     #se limpia el mensaje de "Espere mientras se extraen los datos..."
+########################################## FIN DE FUNCION 2 ##########################################
+
+########################################## FUNCION 3: PROGRAMA PARA CARGAR ARCHIVO ##########################################
 def cargar_archivo():
     archivo = filedialog.askopenfilename()
     if archivo:
         guardar_en_carpeta(archivo)
+########################################## FIN DE FUNCION 3 ##########################################
 
+########################################## FUNCION 4: PROGRAMA PARA GUARDAR EL ARCHIVO CARGADO ##########################################
 def guardar_en_carpeta(ruta_archivo):
-    carpeta_destino = "PDFs_file"  # Cambia esta ruta por la ruta de tu carpeta de destino
+    carpeta_destino = "PDFs_file"               
     if not os.path.exists(carpeta_destino):
         os.makedirs(carpeta_destino)
     
@@ -560,13 +632,16 @@ def guardar_en_carpeta(ruta_archivo):
     try:
         shutil.copy(ruta_archivo, ruta_destino)
         print(f"Archivo copiado en: {ruta_destino}")
-        mensaje_cargar.config(text=f"{nombre_archivo} cargado correctamente")
+        mensaje_cargar = f"{nombre_archivo} cargado correctamente"
+        canvas.itemconfig(mensaje_cargar_id, text=mensaje_cargar)
 
     except Exception as e:
         print(f"Error al copiar el archivo: {e}")
-        mensaje_cargar.config(text=f"Error al cargar el archivo: {e}")
-    
+        mensaje_cargar = f"Error al cargar el archivo: {e}"
+        canvas.itemconfig(mensaje_cargar_id, text=mensaje_cargar)
+########################################## FIN DE FUNCION 4 ##########################################
 
+########################################## FUNCION 5: PROGRAMA PARA ELIMINAR ARCHIVOS CUANDO SE CIERRA LA VENTANA ##########################################
 def limpiar_carpetas():
     carpetas = ["img_of_pdf", "PDFs_file"]
     for carpeta in carpetas:
@@ -584,65 +659,55 @@ def limpiar_carpetas():
 def on_closing():
     limpiar_carpetas()
     ventana.destroy()   
+########################################## FIN DE FUNCION 5 ##########################################
+
 ####################INICIO DE LA INTERFAZ DE LA VENTANA PRINCIPAL##################################
-# Crear la ventana principal
-ventana = tk.Tk()
-ventana.title("LECTOR DE FACTURAS ELECTRICAS")
+ventana = tk.Tk()                                       #Creamos la
+ventana.title("LECTOR DE FACTURAS ELECTRICAS")          #ventana principal
 
-# Obtener las dimensiones de la pantalla
-ancho_pantalla = ventana.winfo_screenwidth()
-alto_pantalla = ventana.winfo_screenheight()
+ancho_pantalla = ventana.winfo_screenwidth()            #Obtenemos las dimensiones de 
+alto_pantalla = ventana.winfo_screenheight()            #la pantalla del dispositivo
+ancho_ventana = 800                                     #para tener un ancho
+alto_ventana = 600                                      #y alto de la ventana
+posicion_x = (ancho_pantalla - ancho_ventana) // 2      #centrada en medio
+posicion_y = (alto_pantalla - alto_ventana) // 2        #de la pantalla
 
-# Calcular las coordenadas para centrar la ventana
-ancho_ventana = 800
-alto_ventana = 600
-posicion_x = (ancho_pantalla - ancho_ventana) // 2 
-posicion_y = (alto_pantalla - alto_ventana) // 2
+ventana.geometry(f"{ancho_ventana}x{alto_ventana}+{posicion_x}+{posicion_y}")   #Establecemos el tamaño y la posición de la ventana
 
-# Establecer el tamaño y la posición de la ventana
-ventana.geometry(f"{ancho_ventana}x{alto_ventana}+{posicion_x}+{posicion_y}")
+canvas = tk.Canvas(ventana, width=ancho_ventana, height=alto_ventana)           #Creamos un canvas
+canvas.pack(fill="both", expand=True)                                           #para una interfaz mas amigable
 
-# Crear un Canvas
-canvas = tk.Canvas(ventana, width=ancho_ventana, height=alto_ventana)
-canvas.pack(fill="both", expand=True)
+imagen_fondo = Image.open("background.png")                                                                                     #Estableciendo
+imagen_fondo = imagen_fondo.resize((ancho_ventana, alto_ventana), Image.Resampling.LANCZOS)                                     #un background
+imagen_fondo = ImageTk.PhotoImage(imagen_fondo)                                                                                 #de la
+canvas.create_image(0, 0, anchor="nw", image=imagen_fondo)                                                                      #EETC MT
 
-# Cargar la imagen de fondo
-imagen_fondo = Image.open("/Users/jurgenalejandrorocasalvosanchez/Documents/Programa_PDG/Lector_de_Facturas/background.png")
-imagen_fondo = imagen_fondo.resize((ancho_ventana, alto_ventana), Image.Resampling.LANCZOS)
-imagen_fondo = ImageTk.PhotoImage(imagen_fondo)
+#Texto y botones que se muestran en la ventana
+fuente_texto=("times", 25, "bold")
 
-# Dibujar la imagen de fondo
-canvas.create_image(0, 0, anchor="nw", image=imagen_fondo)
-fuente_texto=("Helvetica", 16, "bold")
-# Crear y posicionar los widgets en el Canvas
-etiqueta = tk.Label(ventana, text="Bienvenido al lector automatizado de facturas del servicio electrico", font=fuente_texto, bg="black")
-canvas.create_window(ancho_ventana//2, 50, window=etiqueta)
+canvas.create_text(ancho_ventana//2, 50, text="Bienvenido al lector automatizado de facturas del servicio electrico", font=fuente_texto, fill="black")  #Cabecera
 
-btn_seleccionar = tk.Button(ventana, text="Cargue su PDF", font=fuente_texto, command=cargar_archivo)
+btn_seleccionar = tk.Button(ventana, text="Cargue su PDF", font=fuente_texto, command=cargar_archivo)   #Boton 1
 canvas.create_window(ancho_ventana//2, 150, window=btn_seleccionar)
 
-mensaje_cargar = tk.Label(ventana, text="", font=fuente_texto, bg="black", fg="white")
-canvas.create_window(ancho_ventana//2, 200, window=mensaje_cargar)
+mensaje_cargar = ""                                                                                                     #Texto 1
+mensaje_cargar_id = canvas.create_text(ancho_ventana // 2, 200, text=mensaje_cargar, font=fuente_texto, fill="black")
 
-mensaje = tk.Label(ventana, text="", font=fuente_texto, bg="black")
-canvas.create_window(ancho_ventana//2, 250, window=mensaje)
+mensaje = ""                                                                                            #Texto 2
+mensaje_id = canvas.create_text(ancho_ventana//2, 250, text=mensaje, font=fuente_texto, fill="black")
 
-mensaje_datos_extraidos = tk.Label(ventana, text="", font=fuente_texto, bg="black", fg="white")
-canvas.create_window(ancho_ventana//2, 300, window=mensaje_datos_extraidos)
-mensaje_datos_extraidos2 = tk.Label(ventana, text="", font=fuente_texto, bg="black", fg="white")
-canvas.create_window(ancho_ventana//2, 350, window=mensaje_datos_extraidos2)
+mensaje_datos_extraidos = ""                                                                                                            #Texto 3
+mensaje_datos_extraidos_id = canvas.create_text(ancho_ventana//2, 300, text=mensaje_datos_extraidos, font=fuente_texto, fill="black")
 
-btn_iniciar = tk.Button(ventana, text="Inicie el programa", font=fuente_texto, command=iniciar_lectura)
+mensaje_datos_extraidos2 = ""                                                                                                           #Texto 4
+mensaje_datos_extraidos2_id = canvas.create_text(ancho_ventana//2, 350, text=mensaje_datos_extraidos2, font=fuente_texto, fill="black")
+
+btn_iniciar = tk.Button(ventana, text="Inicie el programa", font=fuente_texto, command=iniciar_lectura) #Boton 2
 canvas.create_window(ancho_ventana//2, 400, window=btn_iniciar)
 
-etiqueta_desarrollador = tk.Label(ventana, text="Desarrollado por JaRs", font=fuente_texto, bg="black")
-canvas.create_window(ancho_ventana//2, 550, window=etiqueta_desarrollador)
+canvas.create_text(ancho_ventana//2, 550, text="Desarrollado por JaRs", font=fuente_texto, fill="black")    #Copyright
 
-ventana.protocol("WM_DELETE_WINDOW", on_closing)
+ventana.protocol("WM_DELETE_WINDOW", on_closing)    #Protocolo al cerrar la ventana
 
-# Ejecutar el bucle principal de tkinter
-ventana.mainloop()
+ventana.mainloop()      # Ejecutar el bucle principal de tkinter
 ###########################FIN de la interfaz##########################################
-
-
-
