@@ -336,7 +336,7 @@ ruta_destino = 'img_of_pdf'             #Se extrae las facturas del pdf en la ca
 if not os.path.exists(ruta_destino):    #en el caso de que la carpeta no exista 
     os.makedirs(ruta_destino)           #entonces se crea la carpeta
 
-model = YOLO("/Users/jurgenalejandrorocasalvosanchez/Documents/Programa_PDG/Lector_de_Facturas/best_ultimo.pt")    # Carga el modelo entrenado
+model = YOLO("best_ultimo.pt")    # Carga el modelo entrenado
 
 #Cargamos las librerias para el reconocimiento OCR
 reader_es = easyocr.Reader(['es'], gpu=True)  
@@ -674,7 +674,7 @@ ventana.geometry(f"{ancho_ventana}x{alto_ventana}+{posicion_x}+{posicion_y}")   
 canvas = tk.Canvas(ventana, width=ancho_ventana, height=alto_ventana)           #Creamos un canvas
 canvas.pack(fill="both", expand=True)                                           #para una interfaz mas amigable
 
-imagen_fondo = Image.open("/Users/jurgenalejandrorocasalvosanchez/Documents/Programa_PDG/Lector_de_Facturas/background.png")    #Estableciendo
+imagen_fondo = Image.open("background.png")                                                                                     #Estableciendo
 imagen_fondo = imagen_fondo.resize((ancho_ventana, alto_ventana), Image.Resampling.LANCZOS)                                     #un background
 imagen_fondo = ImageTk.PhotoImage(imagen_fondo)                                                                                 #de la
 canvas.create_image(0, 0, anchor="nw", image=imagen_fondo)                                                                      #EETC MT
