@@ -138,16 +138,16 @@ else:
     #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO FUERON RECONOCIDOS Y DEBIERON SERLO:
     #--DE FORMA GENERAL
     formulas_rangos = [
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(B2))', "B2:I1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(L2))', "L2:P1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(AB2))', "AB2:AB1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(AD2))', "AD2:AD1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(AI2))', "AI2:AJ1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(AZ2))', "AZ2:BA1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(BG2))', "BG2:BG1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(BJ2))', "BJ2:BJ1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(BP2))', "BP2:BP1048576"),
-        ('=AND(NOT(ISBLANK($A2)), ISBLANK(BU2))', "BU2:BW1048576")
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(B2))', "B2:I1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(L2))', "L2:P1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(AB2))', "AB2:AB1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(AD2))', "AD2:AD1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(AI2))', "AI2:AJ1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(AZ2))', "AZ2:BA1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(BG2))', "BG2:BG1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(BJ2))', "BJ2:BJ1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(BP2))', "BP2:BP1048576"),
+        ('AND(NOT(ISBLANK($A2)), ISBLANK(BU2))', "BU2:BW1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=red_fill, font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
@@ -156,8 +156,8 @@ else:
 
     #--CON CONDICIONANTE: SI LECTURA MEDIDOR ANTERIOR FUE RECONOCIDO TAMBIEN DEBE SER RECONOCIDO LECTURA MEDIDOR ACTUAL Y VICEVERSA
     formulas_rangos = [
-        ('=AND(NOT(ISBLANK($Q2)), ISBLANK($R2))', "R2:R1048576"),
-        ('=AND(NOT(ISBLANK($R2)), ISBLANK($Q2))', "Q2:Q1048576")
+        ('AND(NOT(ISBLANK($Q2)), ISBLANK($R2))', "R2:R1048576"),
+        ('AND(NOT(ISBLANK($R2)), ISBLANK($Q2))', "Q2:Q1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=red_fill, font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
@@ -165,21 +165,21 @@ else:
         hoja.conditional_formatting.add(rango, rule)
 
     #--CON CONDICIONANTE: SI UNA LECTURA DE BLOQUE FUE IDENTIFICADO TODOS LOS DEMAS CAMPOS DE LECTURA DE BLOQUE TAMBIEN DEBERIAN SER IDENTIFICADOS
-    formula2 = '=AND(SUM(--(NOT(ISBLANK($T2:$W2)))) > 0, ISBLANK(S2))'
+    formula2 = 'AND(SUM(--(NOT(ISBLANK($T2:$W2)))) > 0, ISBLANK(S2))'
     rango2 = "S2:AA1048576"
     rule2 = FormulaRule(formula=[formula2], fill=red_fill, font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #--CON CONDICIONANTE: SI UNA POTENCIA LEIDA DE BLOQUE BAJO O MEDIO FUE IDENTIFICADA TODOS LOS CAMPOS DE POTENCIA LEIDA DEBEN SER RECONOCIDO
-    formula2 = '=AND(OR(NOT(ISBLANK($AN2)), NOT(ISBLANK($AM2))), OR(ISBLANK($AM2), ISBLANK($AL2), ISBLANK($AN2)))'
+    formula2 = 'AND(OR(NOT(ISBLANK($AN2)), NOT(ISBLANK($AM2))), OR(ISBLANK($AM2), ISBLANK($AL2), ISBLANK($AN2)))'
     rango2 = "AL2:AN1048576"
     rule2 = FormulaRule(formula=[formula2], fill=red_fill, font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #--CON CONDICIONANTE: SI POTENCIA A FACTURAR FUE RECONOCIDO POTENCIA LEIDA BLOQUE ALTO TAMBIEN DEBE SER RECONOCIDO Y VICEVERSA
     formulas_rangos = [
-        ('=AND(NOT(ISBLANK($AO2)), ISBLANK($AL2))', "AL2:AL1048576"),
-        ('=AND(NOT(ISBLANK($AL2)), ISBLANK($AO2))', "AO2:AO1048576")
+        ('AND(NOT(ISBLANK($AO2)), ISBLANK($AL2))', "AL2:AL1048576"),
+        ('AND(NOT(ISBLANK($AL2)), ISBLANK($AO2))', "AO2:AO1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=red_fill, font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
@@ -188,8 +188,8 @@ else:
 
     #--CON CONDICIONANTE: SI ENERGIA REACTIVA FUE RECONOCIDO FACTOR DE POTENCIA TAMBIEN DEBE SER RECONOCIDA Y VICEVERSA
     formulas_rangos = [
-        ('=AND(NOT(ISBLANK($AR2)), ISBLANK($AQ2))', "AQ2:AQ1048576"),
-        ('=AND(NOT(ISBLANK($AQ2)), ISBLANK($AR2))', "AR2:AR1048576")
+        ('AND(NOT(ISBLANK($AR2)), ISBLANK($AQ2))', "AQ2:AQ1048576"),
+        ('AND(NOT(ISBLANK($AQ2)), ISBLANK($AR2))', "AR2:AR1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=red_fill, font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
@@ -198,8 +198,8 @@ else:
 
     #--CON CONDICIONANTE: SI EXCESO DE POTENCIA FUE RECONOCIDO EL IMPORTE POR EXCESO DE POTENCIA DEBER SERLO TAMBIEN Y VICEVERSA
     formulas_rangos = [
-        ('=AND(NOT(ISBLANK($AY2)), ISBLANK($AP2))', "AP2:AP1048576"),
-        ('=AND(NOT(ISBLANK($AP2)), ISBLANK($AY2))', "AY2:AY1048576")
+        ('AND(NOT(ISBLANK($AY2)), ISBLANK($AP2))', "AP2:AP1048576"),
+        ('AND(NOT(ISBLANK($AP2)), ISBLANK($AY2))', "AY2:AY1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=red_fill, font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
@@ -208,8 +208,8 @@ else:
     
     #--CON CONDICIONANTE: SI POTENCIA LEIDA FUE RECONOCIDO MULTIPLICADOR DEBERIA SER RECONOCIDO Y VICEVERSA
     formulas_rangos = [
-        ('=AND(NOT(ISBLANK($AL2)), ISBLANK($AC2))', "AC2:AC1048576"),
-        ('=AND(NOT(ISBLANK($AL2)), ISBLANK($AL2))', "AL2:AL1048576")
+        ('AND(NOT(ISBLANK($AL2)), ISBLANK($AC2))', "AC2:AC1048576"),
+        ('AND(NOT(ISBLANK($AL2)), ISBLANK($AL2))', "AL2:AL1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=red_fill, font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
@@ -219,12 +219,12 @@ else:
     #############################################################################
     #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE DEBEN SER EN FORMATO NUMERICO 
     formulas_rangos = [
-        ('=AND(NOT(ISNUMBER($D2)), NOT(ISBLANK($D2)))', "D2:D1048576"),
-        ('=AND(NOT(ISNUMBER($G2)), NOT(ISBLANK($G2)))', "G2:G1048576"),
-        ('=AND(NOT(ISNUMBER($K2)), NOT(ISBLANK($K2)))', "K2:K1048576"),
-        ('=AND(NOT(ISNUMBER(Q2)), NOT(ISBLANK(Q2)))', "Q2:AA1048576"),
-        ('=AND(NOT(ISNUMBER(AC2)), NOT(ISBLANK(AC2)))', "AC2:BU1048576"),
-        ('=AND(NOT(ISNUMBER($BW2)), NOT(ISBLANK($BW2)))', "BW2:BW1048576")
+        ('AND(NOT(ISNUMBER($D2)), NOT(ISBLANK($D2)))', "D2:D1048576"),
+        ('AND(NOT(ISNUMBER($G2)), NOT(ISBLANK($G2)))', "G2:G1048576"),
+        ('AND(NOT(ISNUMBER($K2)), NOT(ISBLANK($K2)))', "K2:K1048576"),
+        ('AND(NOT(ISNUMBER(Q2)), NOT(ISBLANK(Q2)))', "Q2:AA1048576"),
+        ('AND(NOT(ISNUMBER(AC2)), NOT(ISBLANK(AC2)))', "AC2:BU1048576"),
+        ('AND(NOT(ISNUMBER($BW2)), NOT(ISBLANK($BW2)))', "BW2:BW1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=blue_fill, font=blue_font, border=blue_border)
     for formula, rango in formulas_rangos:
@@ -234,12 +234,12 @@ else:
     #############################################################################
     #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO DEBEN SER NEGATIVOS 
     formulas_rangos = [
-        ('=$D2<0', "D2:D1048576"),
-        ('=$G2<0', "G2:G1048576"),
-        ('=$K2<0', "K2:K1048576"),
-        ('=Q2<0', "Q2:AA1048576"),
-        ('=AC2<0', "AC2:AD1048576"),
-        ('=AI2<0', "AI2:AR1048576")
+        ('$D2<0', "D2:D1048576"),
+        ('$G2<0', "G2:G1048576"),
+        ('$K2<0', "K2:K1048576"),
+        ('Q2<0', "Q2:AA1048576"),
+        ('AC2<0', "AC2:AD1048576"),
+        ('AI2<0', "AI2:AR1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=lightgray_fill, font=blue_font, border=blue_border)
     for formula, rango in formulas_rangos:
@@ -249,11 +249,11 @@ else:
     #############################################################################
     #-ESTAS REGLAS SON PARA LOS DATOS O CAMPOS QUE NO DEBEN TENER DECIMALES
     formulas_rangos = [
-        ('=ROUND($D2,0)<>$D2', "D2:D1048576"),
-        ('=ROUND($G2,0)<>$G2', "G2:G1048576"),
-        ('=ROUND($K2,0)<>$K2', "K2:K1048576"),
-        ('=ROUND(Q2,0)<>Q2', "Q2:AA1048576"),
-        ('=ROUND(AC2,0)<>AC2', "AC2:AQ1048576"),
+        ('ROUND($D2,0)<>$D2', "D2:D1048576"),
+        ('ROUND($G2,0)<>$G2', "G2:G1048576"),
+        ('ROUND($K2,0)<>$K2', "K2:K1048576"),
+        ('ROUND(Q2,0)<>Q2', "Q2:AA1048576"),
+        ('ROUND(AC2,0)<>AC2', "AC2:AQ1048576"),
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], fill=blue_fill, font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
@@ -262,56 +262,56 @@ else:
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE Total energia a facturar = Energia consumida en n dias + Energia estimada + Energia adicional por cambio de medidor + Menos devolucion kWh + Perdidas en el transformador
-    formula2 = '=$AI2<>($AD2+$AE2+$AF2+$AG2+$AH2)'
+    formula2 = '$AI2<>($AD2+$AE2+$AF2+$AG2+$AH2)'
     rango2 = "AI2:AI1048576"
     rule2 = FormulaRule(formula=[formula2], font=blue_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE Importe por consumo = Importe por Cargo Fijo + Importe por Energia + Importe por Energia Bloque Alto + Importe por Energia Bloque Medio + Importe por Energia Bloque Bajo + Importe por potencia + Importe por exceso de potencia fuera de punta 
-    formula2 = '=$AZ2<>($AS2+$AT2+$AU2+$AW2+$AV2+$AY2+$AX2)'
+    formula2 = '$AZ2<>($AS2+$AT2+$AU2+$AW2+$AV2+$AY2+$AX2)'
     rango2 = "AS2:AZ1048576"
     rule2 = FormulaRule(formula=[formula2], fill=yellow_fill, font=yellow_font, border=yellow_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE Importe total por el suministro = Importe total por el consumo + Mas debito consumo no facturado – Menos crédito por Devolucion + Importe por bajo factor de potencia + Mas cargo por conexión + Mas intereses por mora 
-    formula2 = '=$BG2<>($BA2+$BE2-$BF2+$BB2+$BD2+$BC2)'
+    formula2 = '$BG2<>($BA2+$BE2-$BF2+$BB2+$BD2+$BC2)'
     rango2 = "BA2:BG1048576"
     rule2 = FormulaRule(formula=[formula2], fill=purple_fill, font=purple_font, border=purple_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE Importe  total factura = Importe total por el suministro + Tasas por alumbrado publico + Tasas por aseo urbano 
-    formula2 = '=$BJ2<>($BG2+$BH2+$BI2)'
+    formula2 = '$BJ2<>($BG2+$BH2+$BI2)'
     rango2 = "BG2:BJ1048576"
     rule2 = FormulaRule(formula=[formula2], fill=brown_fill, font=brown_font, border=brown_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE Importe del mes a cancelar = Importe total factura + Mas crédito aplicado en cuenta corriente – Menos crédito anterior – Menos reducción calidad servicio técnico – Pagos adelantados aplicados + Mas depósito de garantía.
-    formula2 = '=$BP2<>($BJ2+$BL2-$BM2-$BN2-$BO2+$BK2)'
+    formula2 = '$BP2<>($BJ2+$BL2-$BM2-$BN2-$BO2+$BK2)'
     rango2 = "BJ2:BP1048576"
     rule2 = FormulaRule(formula=[formula2], fill=orange_fill, font=orange_font, border=orange_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE Importe total a cancelar = Importe del mes a cancelar + Mas deudas pendientes de energía + Deudas pendientes de tasa de aseo – Menos pago adelantado
-    formula2 = '=$BU2<>($BP2+$BQ2+$BR2-$BS2)'
+    formula2 = '$BU2<>($BP2+$BQ2+$BR2-$BS2)'
     rango2 = "BP2:BU1048576"
     rule2 = FormulaRule(formula=[formula2], fill=green_fill, font=green_font, border=green_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE CONSUMIDOR ES CORRECTO
-    formula2 = '=$F2<>$E2'
+    formula2 = '$F2<>$E2'
     rango2 = "E2:F1048576"
     rule2 = FormulaRule(formula=[formula2], font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
 
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE TOTAL ENERGIA A FACTURAR
-    formula2 = '=$AI2<>$AJ2'
+    formula2 = '$AI2<>$AJ2'
     rango2 = "AI2:AJ1048576"
     rule2 = FormulaRule(formula=[formula2], font=red_font, border=red_border)
     hoja.conditional_formatting.add(rango2, rule2)
@@ -319,8 +319,8 @@ else:
     #############################################################################
     #-ESTA REGLA ES PARA VERIFICAR QUE EL DATO DE CONSUMIDOR ES CORRECTO
     formulas_rangos = [
-        ('=$BW2<>$BU2', "BU2:BU1048576"),
-        ('=$BW2<>$BU2', "BW2:BW1048576")
+        ('$BW2<>$BU2', "BU2:BU1048576"),
+        ('$BW2<>$BU2', "BW2:BW1048576")
     ]
     rule1 = FormulaRule(formula=[formulas_rangos[0][0]], font=red_font, border=red_border)
     for formula, rango in formulas_rangos:
